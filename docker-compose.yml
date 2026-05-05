@@ -1,20 +1,38 @@
 services:
+  actual_server:
+    image: docker.io/actualbudget/actual-server:latest
+    ports:
+      - '5006:5006'
+    volumes:
+      - ./actual-data:/data
+    restart: unless-stopped
 
   actual-ai:
-    build:
-      context: .
-      args:
-        - NODE_ENV=development
-    command: npm run dev-docker
-    env_file:
-      - .env
-    volumes:
-      - .:/opt/node_app/app
-      - ./package.json:/opt/node_app//package.json
-      - ./package-lock.json:/opt/node_app//package-lock.json
-      - notused:/opt/node_app/app/node_modules
+    image: docker.io/sakowicz/actual-ai:latest
+    restart: unless-stopped
     environment:
-      - NODE_ENV=development
-
-volumes:
-  notused:
+      ACTUAL_SERVER_URL: http://localhost:5006
+      ACTUAL_PASSWORD: actual
+      ACTUAL_BUDGET_ID: 48cd38c7-df04-4cb9-81d9-f119998ab1b8 # This is the ID from Settings → Show advanced settings → Sync ID
+      CLASSIFICATION_SCHEDULE_CRON: 0 */4 * * * # How often to run classification.
+      LLM_PROVIDER: ollama # Can be "openai", "anthropic", "google-generative-ai", "ollama" or "groq"
+      FEATURES: '["classifyOnStartup", "suggestNewCategories", "dryRun"]' # "classifyOnStartup", "syncAccountsBeforeClassify", "freeWebSearch", "suggestNewCategories"
+      OLLAMA_MODEL: hf.co/modularai/Llama-3.1-8B-Instruct-GGUF:Q4_K_M # optional. required if you want to use an Ollama specific model, default is "phi3.5"
+      OLLAMA_BASE_URL: http://localhost:11434/api # optional. required for ollama provider
+      NOT_GUESSED_TAG: '#actual-ai-miss'
+      GUESSED_TAG: '#actual-ai'
+#      VALUESERP_API_KEY: your_valueserp_api_key # API key for ValueSerp, required if webSearch tool is enabled
+#      OPENAI_API_KEY:  # optional. required if you want to use the OpenAI API
+#      OPENAI_MODEL:  # optional. required if you want to use a specific model, default is "gpt-4o-mini"
+#      OPENAI_BASE_URL:  # optional. required if you don't want to use the OpenAI API but OpenAI compatible API, ex: "http://ollama:11424/v1
+#      ANTHROPIC_API_KEY:  # optional. required if you want to use the Anthropic API
+#      ANTHROPIC_MODEL:  # optional. required if you want to use a specific model, default is "claude-3-5-sonnet-latest"
+#      ANTHROPIC_BASE_URL:  # optional. default: "https://api.anthropic.com/v1
+#      GOOGLE_GENERATIVE_AI_API_KEY:  # optional. required if you want to use the Google Generative AI API
+#      GOOGLE_GENERATIVE_AI_MODEL:  # optional. required if you want to use a specific model, default is "gemini-1.5-flash"
+#      GOOGLE_GENERATIVE_AI_BASE_URL:  # optional. default: "https://generativelanguage.googleapis.com"
+#      GROQ_API_KEY:  # optional. required if you want to use the Groq API
+#      GROQ_MODEL:  # optional. required if you want to use a specific model, default is "mixtral-8x7b-32768"
+#      GROQ_BASE_URL:  # optional. default: "https://api.groq.com/openai/v1"
+#      ACTUAL_E2E_PASSWORD:  # optional. required if you have E2E encryption
+#      NODE_TLS_REJECT_UNAUTHORIZED: 0 # optional. required if you have trouble connecting to Actual server 
