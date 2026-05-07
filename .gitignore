@@ -5,5 +5,5 @@ dist/
 .env
 *.log
 .claude/settings.local.json
-src/actual-ai.ts
 ACTUAL_BUDGET_EXTRACTOR_SPEC.md
+actual-ai-review.xlsx
