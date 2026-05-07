@@ -2,13 +2,14 @@ import {
   RuleEntity,
   TransactionEntity,
 } from '@actual-app/core/src/types/models';
-import { APIPayeeEntity } from '@actual-app/core/src/server/api-models';
+import { APIAccountEntity, APIPayeeEntity } from '@actual-app/core/src/server/api-models';
 import {
   ActualApiServiceI, APICategoryEntity, APICategoryGroupEntity,
   LlmServiceI, ProcessingStrategyI,
   PromptGeneratorI,
 } from '../types';
 import TagService from './tag-service';
+import ReviewFileService from '../review-file-service';
 
 class TransactionProcessor {
   private readonly actualApiService: ActualApiServiceI;
@@ -21,18 +22,22 @@ class TransactionProcessor {
 
   private readonly processingStrategies: ProcessingStrategyI[];
 
+  private readonly reviewFileService?: ReviewFileService;
+
   constructor(
     actualApiClient: ActualApiServiceI,
     llmService: LlmServiceI,
     promptGenerator: PromptGeneratorI,
     tagService: TagService,
     processingStrategies: ProcessingStrategyI[],
+    reviewFileService?: ReviewFileService,
   ) {
     this.actualApiService = actualApiClient;
     this.llmService = llmService;
     this.promptGenerator = promptGenerator;
     this.tagService = tagService;
     this.processingStrategies = processingStrategies;
+    this.reviewFileService = reviewFileService;
   }
 
   public async process(
@@ -48,6 +53,7 @@ class TransactionProcessor {
         groupId?: string;
         transactions: TransactionEntity[];
       }>,
+    accounts: APIAccountEntity[] = [],
   ): Promise<void> {
     try {
       const prompt = this.promptGenerator.generate(
@@ -58,6 +64,10 @@ class TransactionProcessor {
       );
 
       const response = await this.llmService.ask(prompt);
+
+      if (this.reviewFileService) {
+        this.reviewFileService.record(transaction, response, categories, categoryGroups, accounts);
+      }
 
       const strategy = this.processingStrategies.find((s) => s.isSatisfiedBy(response));
       if (strategy) {

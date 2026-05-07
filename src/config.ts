@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import fs from 'fs';
+import { cliArgs } from './cli-args';
 import { parseRateLimitEnv } from './utils/parse-rate-limit-env';
 
 const defaultPromptTemplate = fs.readFileSync('./src/templates/prompt.hbs', 'utf8').trim();
@@ -91,37 +92,39 @@ try {
 
 function registerStandardFeatures() {
   features.suggestNewCategories = {
-    enabled: enabledFeatures.includes('suggestNewCategories'),
+    enabled: enabledFeatures.includes('suggestNewCategories') || !!cliArgs.suggestNewCategories,
     defaultValue: false,
     description: 'Suggest new categories for transactions that cannot be classified',
   };
 
+  // CLI is authoritative: defaults true, false only with --no-dry-run
   features.dryRun = {
-    enabled: enabledFeatures.includes('dryRun'),
+    enabled: cliArgs.dryRun,
     defaultValue: true,
     description: 'Run in dry mode without actually making changes',
   };
 
   features.rerunMissedTransactions = {
-    enabled: enabledFeatures.includes('rerunMissedTransactions'),
+    enabled: enabledFeatures.includes('rerunMissedTransactions') || !!cliArgs.rerunMissed,
     defaultValue: false,
     description: 'Re-process transactions marked as not guessed',
   };
 
+  // CLI is authoritative: defaults true, false only with --no-classify-on-startup
   features.classifyOnStartup = {
-    enabled: enabledFeatures.includes('classifyOnStartup') || process.env.CLASSIFY_ON_STARTUP === 'true',
+    enabled: cliArgs.classifyOnStartup || process.env.CLASSIFY_ON_STARTUP === 'true',
     defaultValue: false,
     description: 'Run classification when the application starts',
   };
 
   features.syncAccountsBeforeClassify = {
-    enabled: enabledFeatures.includes('syncAccountsBeforeClassify') || process.env.SYNC_ACCOUNTS_BEFORE_CLASSIFY === 'true',
+    enabled: enabledFeatures.includes('syncAccountsBeforeClassify') || !!cliArgs.syncAccounts || process.env.SYNC_ACCOUNTS_BEFORE_CLASSIFY === 'true',
     defaultValue: false,
     description: 'Sync accounts before running classification',
   };
 
   features.disableRateLimiter = {
-    enabled: enabledFeatures.includes('disableRateLimiter'),
+    enabled: enabledFeatures.includes('disableRateLimiter') || !!cliArgs.disableRateLimiter,
     defaultValue: false,
     description: 'Disable Rate Limiter',
   };
@@ -195,3 +198,6 @@ export function getEnabledTools(): string[] {
 export function isToolEnabled(toolName: string): boolean {
   return getEnabledTools().includes(toolName);
 }
+
+export const outputFile: string = cliArgs.outputFile;
+export const applyFile: string | undefined = cliArgs.applyFile;

@@ -5,10 +5,11 @@ import type {
   ActualApiServiceI,
   TransactionServiceI,
 } from './types';
-import { isFeatureEnabled } from './config';
+import { isFeatureEnabled, outputFile } from './config';
 import CategorySuggester from './transaction/category-suggester';
 import BatchTransactionProcessor from './transaction/batch-transaction-processor';
 import TransactionFilterer from './transaction/transaction-filterer';
+import ReviewFileService from './review-file-service';
 
 class TransactionService implements TransactionServiceI {
   private readonly actualApiService: ActualApiServiceI;
@@ -21,18 +22,22 @@ class TransactionService implements TransactionServiceI {
 
   private readonly isDryRun: boolean;
 
+  private readonly reviewFileService?: ReviewFileService;
+
   constructor(
     actualApiClient: ActualApiServiceI,
     categorySuggester: CategorySuggester,
     transactionProcessor: BatchTransactionProcessor,
     transactionFilterer: TransactionFilterer,
     isDryRun: boolean,
+    reviewFileService?: ReviewFileService,
   ) {
     this.actualApiService = actualApiClient;
     this.categorySuggester = categorySuggester;
     this.transactionProcessor = transactionProcessor;
     this.transactionFilterer = transactionFilterer;
     this.isDryRun = isDryRun;
+    this.reviewFileService = reviewFileService;
   }
 
   async processTransactions(): Promise<void> {
@@ -79,10 +84,16 @@ class TransactionService implements TransactionServiceI {
       rules,
       categories,
       suggestedCategories,
+      accounts,
     );
 
+    if (this.isDryRun && this.reviewFileService && this.reviewFileService.count > 0) {
+      await this.reviewFileService.writeFile(outputFile);
+      this.reviewFileService.printDryRunSummary(outputFile);
+    }
+
     // Create new categories if not in dry run mode
-    if (isFeatureEnabled('suggestNewCategories') && suggestedCategories.size > 0) {
+    if (!this.isDryRun && isFeatureEnabled('suggestNewCategories') && suggestedCategories.size > 0) {
       await this.categorySuggester.suggest(
         suggestedCategories,
         uncategorizedTransactions,

@@ -40,6 +40,7 @@ import {
   tokensPerMinuteOverride,
   valueSerpApiKey,
 } from './config';
+import ReviewFileService from './review-file-service';
 import ActualAiService from './actual-ai';
 import PromptGenerator from './prompt-generator';
 import LlmService from './llm-service';
@@ -66,6 +67,8 @@ export function createToolService(): ToolService | undefined {
 const toolService = createToolService();
 
 const isDryRun = isFeatureEnabled('dryRun');
+
+const reviewFileService = new ReviewFileService();
 
 const llmModelFactory = new LlmModelFactory(
   llmProvider,
@@ -140,6 +143,7 @@ const transactionProcessor = new TransactionProcessor(
   promptGenerator,
   tagService,
   [ruleMatchStrategy, existingCategoryStrategy, newCategoryStrategy],
+  isDryRun ? reviewFileService : undefined,
 );
 
 const batchTransactionProcessor = new BatchTransactionProcessor(
@@ -155,6 +159,7 @@ const transactionService = new TransactionService(
   batchTransactionProcessor,
   transactionFilterer,
   isDryRun,
+  isDryRun ? reviewFileService : undefined,
 );
 
 const notesMigrator = new NotesMigrator(
@@ -166,6 +171,8 @@ const actualAi = new ActualAiService(
   transactionService,
   actualApiService,
   notesMigrator,
+  reviewFileService,
+  isDryRun,
 );
 
 export default actualAi;

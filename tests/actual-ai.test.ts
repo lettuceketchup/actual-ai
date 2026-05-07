@@ -1,4 +1,5 @@
 import ActualAiService from '../src/actual-ai';
+import ReviewFileService from '../src/review-file-service';
 import TransactionService from '../src/transaction-service';
 import InMemoryActualApiService from './test-doubles/in-memory-actual-api-service';
 import MockedLlmService from './test-doubles/mocked-llm-service';
@@ -114,6 +115,8 @@ describe('ActualAiService', () => {
       transactionService,
       inMemoryApiService,
       notesMigrator,
+      new ReviewFileService(),
+      false,
     );
     await sut.classify();
 
@@ -141,6 +144,8 @@ describe('ActualAiService', () => {
       transactionService,
       inMemoryApiService,
       notesMigrator,
+      new ReviewFileService(),
+      false,
     );
     await sut.classify();
 
@@ -167,6 +172,8 @@ describe('ActualAiService', () => {
       transactionService,
       inMemoryApiService,
       notesMigrator,
+      new ReviewFileService(),
+      false,
     );
     await sut.classify();
 
@@ -191,6 +198,8 @@ describe('ActualAiService', () => {
       transactionService,
       inMemoryApiService,
       notesMigrator,
+      new ReviewFileService(),
+      false,
     );
     await sut.classify();
 
@@ -215,6 +224,8 @@ describe('ActualAiService', () => {
       transactionService,
       inMemoryApiService,
       notesMigrator,
+      new ReviewFileService(),
+      false,
     );
     await sut.classify();
 
@@ -238,6 +249,8 @@ describe('ActualAiService', () => {
       transactionService,
       inMemoryApiService,
       notesMigrator,
+      new ReviewFileService(),
+      false,
     );
     await sut.classify();
 
@@ -268,6 +281,8 @@ describe('ActualAiService', () => {
       transactionService,
       inMemoryApiService,
       notesMigrator,
+      new ReviewFileService(),
+      false,
     );
     await sut.classify();
 
@@ -295,6 +310,8 @@ describe('ActualAiService', () => {
       transactionService,
       inMemoryApiService,
       notesMigrator,
+      new ReviewFileService(),
+      false,
     );
     await sut.classify();
 
@@ -329,6 +346,8 @@ describe('ActualAiService', () => {
       transactionService,
       inMemoryApiService,
       notesMigrator,
+      new ReviewFileService(),
+      false,
     );
     await sut.classify();
 
@@ -359,6 +378,8 @@ describe('ActualAiService', () => {
       transactionService,
       inMemoryApiService,
       notesMigrator,
+      new ReviewFileService(),
+      false,
     );
     await sut.classify();
 
@@ -411,6 +432,8 @@ describe('ActualAiService', () => {
       transactionService,
       inMemoryApiService,
       notesMigrator,
+      new ReviewFileService(),
+      false,
     );
     await sut.classify();
 
@@ -435,6 +458,8 @@ describe('ActualAiService', () => {
       transactionService,
       inMemoryApiService,
       notesMigrator,
+      new ReviewFileService(),
+      false,
     );
     await sut.classify();
 
@@ -465,6 +490,8 @@ describe('ActualAiService', () => {
       transactionService,
       inMemoryApiService,
       notesMigrator,
+      new ReviewFileService(),
+      false,
     );
     await sut.classify();
 
@@ -509,6 +536,8 @@ describe('ActualAiService', () => {
       transactionService,
       inMemoryApiService,
       notesMigrator,
+      new ReviewFileService(),
+      false,
     );
 
     // Act
@@ -585,6 +614,8 @@ describe('ActualAiService', () => {
         dryRunTransactionService,
         dryRunApiService,
         new NotesMigrator(dryRunApiService, new TagService(NOT_GUESSED_TAG, GUESSED_TAG)),
+        new ReviewFileService(),
+        true,
       );
       await sut.classify();
 
@@ -609,6 +640,8 @@ describe('ActualAiService', () => {
         dryRunTransactionService,
         dryRunApiService,
         new NotesMigrator(dryRunApiService, new TagService(NOT_GUESSED_TAG, GUESSED_TAG)),
+        new ReviewFileService(),
+        true,
       );
       await sut.classify();
 

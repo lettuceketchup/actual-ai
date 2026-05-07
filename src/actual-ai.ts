@@ -1,9 +1,11 @@
 import {
   ActualAiServiceI, ActualApiServiceI, NotesMigratorI, TransactionServiceI,
+  APICategoryGroupEntity,
 } from './types';
 import suppressConsoleLogsAsync from './utils';
 import { formatError } from './utils/error-utils';
 import { isFeatureEnabled } from './config';
+import ReviewFileService, { ReviewRow } from './review-file-service';
 
 class ActualAiService implements ActualAiServiceI {
   private readonly transactionService: TransactionServiceI;
@@ -12,14 +14,22 @@ class ActualAiService implements ActualAiServiceI {
 
   private readonly notesMigrator: NotesMigratorI;
 
+  private readonly reviewFileService: ReviewFileService;
+
+  private readonly isDryRun: boolean;
+
   constructor(
     transactionService: TransactionServiceI,
     actualApiService: ActualApiServiceI,
     notesMigrator: NotesMigratorI,
+    reviewFileService: ReviewFileService,
+    isDryRun: boolean,
   ) {
     this.transactionService = transactionService;
     this.actualApiService = actualApiService;
     this.notesMigrator = notesMigrator;
+    this.reviewFileService = reviewFileService;
+    this.isDryRun = isDryRun;
   }
 
   public async classify() {
@@ -62,6 +72,75 @@ class ActualAiService implements ActualAiServiceI {
         'An error occurred:',
         formatError(error),
       );
+    } finally {
+      try {
+        if (isBudgetOpen) {
+          await this.actualApiService.shutdownApi();
+        }
+      } catch (shutdownError) {
+        console.error('Error during API shutdown:', formatError(shutdownError));
+      }
+    }
+  }
+
+  public async applyFromFile(filePath: string): Promise<void> {
+    console.log(`Reading review file: ${filePath}`);
+    let rows: ReviewRow[];
+    try {
+      rows = await this.reviewFileService.readFile(filePath);
+    } catch (error) {
+      console.error('Failed to read review file:', formatError(error));
+      return;
+    }
+    console.log(`Found ${rows.length} row${rows.length !== 1 ? 's' : ''} to apply`);
+
+    let isBudgetOpen = false;
+    try {
+      await this.actualApiService.initializeApi();
+      isBudgetOpen = true;
+
+      const categoryGroups = await this.actualApiService.getCategoryGroups() as APICategoryGroupEntity[];
+
+      let applied = 0;
+      let skipped = 0;
+
+      for (const row of rows) {
+        if (!row.category || !row.categoryGroup) {
+          console.warn(`Skipping ${row.transactionId}: missing category or group`);
+          skipped += 1;
+          continue;
+        }
+
+        const group = categoryGroups.find(
+          (g) => g.name.toLowerCase() === row.categoryGroup.toLowerCase(),
+        ) as (APICategoryGroupEntity & { categories?: { id: string; name: string }[] }) | undefined;
+
+        const category = group?.categories?.find(
+          (c) => c.name.toLowerCase() === row.category.toLowerCase(),
+        );
+
+        if (!category) {
+          console.warn(`Category not found: "${row.categoryGroup} > ${row.category}" — skipping ${row.transactionId}`);
+          skipped += 1;
+          continue;
+        }
+
+        // updateTransactionNotesAndCategory respects isDryRun internally
+        await this.actualApiService.updateTransactionNotesAndCategory(
+          row.transactionId,
+          '',
+          category.id,
+        );
+        applied += 1;
+      }
+
+      if (this.isDryRun) {
+        this.reviewFileService.printApplyPreviewSummary(applied, skipped, filePath);
+      } else {
+        this.reviewFileService.printApplySummary(applied);
+      }
+    } catch (error) {
+      console.error('An error occurred:', formatError(error));
     } finally {
       try {
         if (isBudgetOpen) {

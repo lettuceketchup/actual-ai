@@ -2,7 +2,7 @@ import {
   RuleEntity,
   TransactionEntity,
 } from '@actual-app/core/src/types/models';
-import { APIPayeeEntity } from '@actual-app/core/src/server/api-models';
+import { APIAccountEntity, APIPayeeEntity } from '@actual-app/core/src/server/api-models';
 import {
   APICategoryEntity, APICategoryGroupEntity,
 } from '../types';
@@ -34,6 +34,7 @@ class BatchTransactionProcessor {
         groupId?: string;
         transactions: TransactionEntity[];
       }>,
+    accounts: APIAccountEntity[] = [],
   ): Promise<void> {
     for (
       let batchStart = 0;
@@ -59,6 +60,7 @@ class BatchTransactionProcessor {
           rules,
           categories,
           suggestedCategories,
+          accounts,
         );
       }, Promise.resolve());
 
