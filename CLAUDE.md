@@ -105,6 +105,74 @@ Feature flag mocking: `jest.spyOn(config, 'isFeatureEnabled').mockReturnValue(tr
 | `PROMPT_TEMPLATE` | `prompt.hbs` | Custom Handlebars template path |
 | `GUESSED_TAG` / `NOT_GUESSED_TAG` | `#actual-ai` / `#actual-ai-miss` | Tags applied to transactions |
 
+## Fork & Upstream Sync
+
+This repo is a fork of [sakowicz/actual-ai](https://github.com/sakowicz/actual-ai).
+
+| Remote | URL |
+|--------|-----|
+| `origin` | https://github.com/lettuceketchup/actual-ai.git (our fork) |
+| `upstream` | https://github.com/sakowicz/actual-ai.git (original) |
+
+### Branch strategy
+
+| Branch | Role |
+|--------|------|
+| `master` | Mirror of `upstream/master` only — **no custom commits here** |
+| `pradhumn-personal-setup` | **Working main branch** — all custom code, merges, and feature branches target this |
+| `<feature-branches>` | Short-lived; branched from and merged back into `pradhumn-personal-setup` |
+
+### Sync master with upstream (run periodically)
+
+```bash
+git checkout master
+git fetch upstream
+git rebase upstream/master   # master stays a clean mirror
+git push origin master
+```
+
+### Keep pradhumn-personal-setup updated with master
+
+```bash
+git checkout pradhumn-personal-setup
+git fetch upstream
+git rebase origin/master     # or upstream/master directly
+git push origin pradhumn-personal-setup --force-with-lease
+```
+
+### Start a new feature branch
+
+Always branch from `pradhumn-personal-setup`, not `master`.
+
+```bash
+git checkout pradhumn-personal-setup
+git checkout -b my-feature
+# ... do work ...
+git checkout pradhumn-personal-setup
+git merge --no-ff my-feature
+git push origin pradhumn-personal-setup
+git branch -d my-feature
+```
+
+### Rebase a feature branch before merging (resolve conflicts early)
+
+```bash
+git checkout my-feature
+git fetch upstream
+git rebase origin/pradhumn-personal-setup
+# Resolve conflicts, then:
+git rebase --continue
+git push origin my-feature --force-with-lease
+```
+
+### Tips to avoid merge conflicts
+
+- Always branch from a freshly synced `pradhumn-personal-setup`, not a stale one.
+- Sync `master` ↔ `upstream/master` before rebasing `pradhumn-personal-setup` onto it.
+- Never commit custom changes to `master` — it must stay a clean upstream mirror.
+- If `package-lock.json` conflicts, accept one side then re-run `npm install` to regenerate it cleanly.
+- Rebase feature branches onto `pradhumn-personal-setup` before merging to surface conflicts early.
+
 ## Windows Note
 
 The app uses `/tmp/actual-ai/` as its data directory (hardcoded in `src/config.ts`). On Windows with Git Bash, create it manually: `mkdir -p /f/tmp/actual-ai`.
